@@ -1,1 +1,1 @@
-# arbitration-for-smart-contracts
+# Dispute resolution for Smart Contracts
