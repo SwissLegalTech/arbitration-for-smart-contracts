@@ -1,0 +1,17 @@
+{
+  "name": "smarbico-contracts",
+  "version": "1.0.0",
+  "description": "",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "truffle": "node truffle",
+    "test": "node truffle test"
+  },
+  "author": "Christian Scharr <christian.scharr@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "openzeppelin-solidity": "^1.12.0"
+  }
+}

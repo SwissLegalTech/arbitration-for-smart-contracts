@@ -1,0 +1,21 @@
+{
+  "name": "smarbico-backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SwissLegalTech/arbitration-for-smart-contracts/backend"
+  },
+  "author": "Christian Scharr <christian.scharr@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "@feathersjs/express": "^1.2.5",
+    "@feathersjs/feathers": "^3.2.1",
+    "@feathersjs/socketio": "^3.2.4",
+    "feathers-memory": "^2.2.0"
+  }
+}
