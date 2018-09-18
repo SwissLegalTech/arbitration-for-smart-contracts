@@ -1,31 +1,43 @@
 pragma solidity ^0.4.24;
 
-import "openzeppelin-solidity/contracts/ownership/Claimable.sol";
-
-contract SmarbicoBase is Claimable {
+contract SmarbicoBase {
     address public owner;
-    mapping(bytes32 => bool) public sellers;
-    uint public sellerCount;
+    mapping(bytes32 => bool) public contracts;
+    uint public contractCount;
 
-    event NewSellerApproved (
-        string seller
+    event NewContract (
+        string contractId
     );
 
-    function addSeller(string seller) public onlyOwner {
-        bytes32 sellerBytes32 = _stringToBytes32(seller);
-        sellers[sellerBytes32] = true;
-        sellerCount++;
-
-        emit NewSellerApproved(seller);
+    modifier ownerNotSet() {
+        require(owner == address(0x0));
+        _;
     }
 
-    function getSellerCount() public constant returns (uint count) {
-        return sellerCount;
+    modifier onlyOwner() {
+        require(owner == msg.sender);
+        _;
     }
 
-    function isSellerKnown(string seller) public constant returns (bool result) {
-        bytes32 sellerBytes32 = _stringToBytes32(seller);
-        return sellers[sellerBytes32];
+    function claimOwnership() public ownerNotSet {
+        owner = msg.sender;
+    }
+
+    function addContract(string contractId) public onlyOwner {
+        bytes32 idBytes32 = _stringToBytes32(contractId);
+        contracts[idBytes32] = true;
+        contractCount++;
+
+        emit NewContract(contractId);
+    }
+
+    function getContractCount() public constant returns (uint count) {
+        return contractCount;
+    }
+
+    function isContractKnown(string contractId) public constant returns (bool result) {
+        bytes32 idBytes32 = _stringToBytes32(contractId);
+        return contracts[idBytes32];
     }
 
     function _stringToBytes32(string memory source) private returns (bytes32 result) {
