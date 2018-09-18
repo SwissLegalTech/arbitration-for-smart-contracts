@@ -5,7 +5,13 @@ const multer = require('multer');
 const crypto = require('crypto');
 const fs = require('fs');
 const Web3 = require('web3');
-const MongoClient = require('mongodb').MongoClient;
+const MongoDb = require('mongodb');
+const MongoClient = MongoDb.MongoClient;
+
+// using SendGrid's v3 Node.js Library
+// https://github.com/sendgrid/sendgrid-nodejs
+const sgMail = require('@sendgrid/mail');
+sgMail.setApiKey('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');
 
 // Connection URL
 const url = 'mongodb://localhost:27017';
@@ -45,10 +51,56 @@ const insertDocument2Db = (document) => {
     });
 };
 
+const fetchDocumentFromDb = (docId) => {
+    return new Promise((resolve, reject) => {
+        mongoDbClient.then(client => {
+            const db = client.db(dbName);
+
+            // Get the documents collection
+            const collection = db.collection('documents');
+            console.log('Search for document with id: #' + docId);
+
+            collection.findOne({_id: MongoDb.ObjectId(docId)}, (err, result) => {
+                if (err) {
+                    reject(err);
+                } else if (result !== null) {
+                    console.log('Found document with id: #' + docId);
+                    resolve(result);
+                } else {
+                    console.log('Unable to find document with id: #' + docId);
+                    resolve(null);
+                }
+            });
+        });
+    });
+};
+
+const replaceDocumentInDb = (docId, document) => {
+    return new Promise((resolve, reject) => {
+        mongoDbClient.then(client => {
+            const db = client.db(dbName);
+
+            // Get the documents collection
+            const collection = db.collection('documents');
+            console.log('Search (& replace) for document with id: #' + docId);
+
+            collection.findOneAndReplace({_id: MongoDb.ObjectId(docId)}, document, (err, result) => {
+                if (err) {
+                    return reject(err);
+                } else {
+                    return resolve(result);
+                }
+            });
+        }).catch((err) => {
+            return reject(err);
+        });
+    });
+};
+
 const ethAccount = '0x53D69fF11FC57A4b66F2A77572C17BBb74F32A50';
 const ethPassword = '1f3634e28b3b5b7248136792e204d22f14d21aa4cc99ed15e1a9c7df78fb8e30';
 const smarbicoBase = require('../contracts/build/contracts/SmarbicoBase.json');
-const smarbicoBaseAddress = '0x679d4cfcaaea1b273fb42a5af7243c32709d9a14';
+const smarbicoBaseAddress = smarbicoBase.networks["5777"].address;
 const ethTransactionConfig = {
     from: ethAccount,
     gasPrice: '0',
@@ -63,6 +115,8 @@ web3.eth.personal.unlockAccount(ethAccount, ethPassword, 6000, () => {
     console.log('account unlocked, trying to claim ownership of contract');
     initializeBlockchain().then(() => {
         console.log("blockchain initialization successful");
+    }).catch((err) => {
+        throw err;
     });
 });
 
@@ -110,6 +164,19 @@ const determineOwnership = new Promise((resolve, reject) => {
     });
 });
 
+const addContract = (contractId, contractHash) => {
+    return new Promise((resolve, reject) => {
+        smarbicoBaseContract.methods.addContract('0x' + contractId, '0x' + contractHash).send(ethTransactionConfig).on('transactionHash', (hash) => {
+            console.log('addContract() - transactionHash: ' + hash);
+        }).on('receipt', (receipt) => {
+            console.log('addContract() - receipt: ' + JSON.stringify(receipt));
+            resolve(true);
+        }).on('error', () => {
+            resolve(false);
+        });
+    });
+};
+
 // Creates an Express compatible Feathers application
 const app = express(feathers());
 // serve static files
@@ -127,8 +194,67 @@ app.use(express.errorHandler());
 
 var upload = multer({dest: 'uploads/'});
 
+app.get('/contract/:contractId', (req, res, next) => {
+    const docId = req.params.contractId;
+
+    fetchDocumentFromDb(docId).then(doc => {
+        res.status(200).send(doc);
+    }).catch(err => {
+        res.status(500).send({
+            'status': 'ERROR',
+            'error': err
+        });
+    });
+});
+
+app.post('/contract/:contractId', upload.single('file'), function (req, httpRes, next) {
+    const docId = req.params.contractId;
+
+    // req.file is the file
+    // req.body will hold the text fields, if there were any
+    fs.readFile('uploads/' + req.file.filename, function (err, data) {
+        if (err) throw err;
+
+        const hash = crypto.createHash('sha256');
+        hash.update(data);
+        let hashedFile = hash.digest('hex');
+
+        fetchDocumentFromDb(docId).then((oldDoc) => {
+            console.log(oldDoc);
+
+            const newDoc = {
+                ...oldDoc,
+                files: [
+                    ...oldDoc.files,
+                    {
+                        'class': 'additional',
+                        'type': req.file.mimetype,
+                        'filename': req.file.originalname,
+                        'data': data,
+                        'hash': hashedFile
+                    }
+                ]
+            };
+
+            replaceDocumentInDb(docId, newDoc).then((res) => {
+                console.log('Successfully replace document #' + docId + ' with a newer version');
+
+                httpRes.status(200).send({
+                    'status': 'OK'
+                });
+            });
+        }).catch((err) => {
+            httpRes.status(500).send({
+                'status': 'ERROR'
+            });
+
+            throw err;
+        });
+    });
+});
+
 app.post('/new-contract', upload.single('file'), function (req, res, next) {
-    console.log(JSON.stringify(req.file));
+    console.log(JSON.stringify(req.body));
 
     // req.file is the file
     // req.body will hold the text fields, if there were any
@@ -140,8 +266,10 @@ app.post('/new-contract', upload.single('file'), function (req, res, next) {
         let hashedFile = hash.digest('hex');
 
         const dbInsert = insertDocument2Db({
+            'createdAt': new Date().getTime(),
             'files': [
                 {
+                    'class': 'contract',
                     'type': req.file.mimetype,
                     'filename': req.file.originalname,
                     'data': data,
@@ -150,17 +278,50 @@ app.post('/new-contract', upload.single('file'), function (req, res, next) {
             ],
             'contacts': [
                 {
-                    'email': 'test@test.de',
-                    'phone': 'test@test.de'
+                    'contact': 'seller',
+                    'email': req.body.emailSeller
+                },
+                {
+                    'contact': 'buyer',
+                    'email': req.body.emailBuyer
                 }
             ]
         });
 
         dbInsert.then(result => {
-            res.status(200).send({
-                'id': result.insertedId,
-                'hash': hashedFile,
-                'status': 'OK'
+            const addContractPromise = addContract(result.insertedId, hashedFile);
+            addContractPromise.then(() => {
+                const subject = 'Your contract is now secure #' + result.insertedId;
+
+                const msgSeller = {
+                    to: req.body.emailSeller,
+                    from: 'no-replay@smarbico.com',
+                    subject: subject,
+                    text: 'now you can manage all of your claims on SmArbiCo.com'
+                };
+
+                sgMail.send(msgSeller);
+
+                const msgBuyer = {
+                    to: req.body.emailBuyer,
+                    from: 'no-replay@smarbico.com',
+                    subject: subject,
+                    text: 'now you can manage all of your claims on SmArbiCo.com'
+                };
+
+                sgMail.send(msgBuyer);
+
+                res.status(200).send({
+                    'id': result.insertedId,
+                    'hash': hashedFile,
+                    'status': 'OK'
+                });
+            }).catch(err => {
+                return res.status(500).send({
+                    'hash': hashedFile,
+                    'status': 'ERROR',
+                    'error': err
+                });
             });
         }).catch(err => {
             return res.status(500).send({
@@ -178,6 +339,6 @@ app.on('connection', connection => app.channel('everybody').join(connection));
 app.publish(data => app.channel('everybody'));
 
 // Start the server
-app.listen(3030).on('listening', () =>
-    console.log('smarbico server listening on localhost:3030')
+app.listen(3030, '127.0.0.1').on('listening', () =>
+    console.log('smarbico server listening on 127.0.0.1:3030')
 );

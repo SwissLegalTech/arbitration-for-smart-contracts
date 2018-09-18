@@ -1,7 +1,7 @@
 <div class="container" style="margin-top: 50px;">
   <div class="field">
     <div class="control">
-      <input class="input is-medium" type="text" placeholder="Lookup your contract no.">
+      <input class="input is-medium" type="text" placeholder="Lookup your contract no." [formControl]="contractLookup" (keydown.enter)="navigate2Contract($event)">
     </div>
   </div>
 </div>

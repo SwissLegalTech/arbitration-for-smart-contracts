@@ -2,11 +2,12 @@ pragma solidity ^0.4.24;
 
 contract SmarbicoBase {
     address public owner;
-    mapping(bytes32 => bool) public contracts;
+    mapping(bytes32 => bytes32) public contracts;
     uint public contractCount;
 
     event NewContract (
-        string contractId
+        bytes32 contractId,
+        bytes32 contractHash
     );
 
     modifier ownerNotSet() {
@@ -23,12 +24,11 @@ contract SmarbicoBase {
         owner = msg.sender;
     }
 
-    function addContract(string contractId) public onlyOwner {
-        bytes32 idBytes32 = _stringToBytes32(contractId);
-        contracts[idBytes32] = true;
+    function addContract(bytes32 idBytes32, bytes32 contractHashBytes32) public onlyOwner {
+        contracts[idBytes32] = contractHashBytes32;
         contractCount++;
 
-        emit NewContract(contractId);
+        emit NewContract(idBytes32, contractHashBytes32);
     }
 
     function getContractCount() public constant returns (uint count) {
@@ -37,7 +37,8 @@ contract SmarbicoBase {
 
     function isContractKnown(string contractId) public constant returns (bool result) {
         bytes32 idBytes32 = _stringToBytes32(contractId);
-        return contracts[idBytes32];
+
+        return (contracts[idBytes32] != 0);
     }
 
     function _stringToBytes32(string memory source) private returns (bytes32 result) {

@@ -1,0 +1,40 @@
+<div class="container" *ngIf="contract$|async as contractData">
+  <article class="message is-primary">
+    <div class="message-header">
+      <p>contract no. #{{contractId}} from {{contractData.createdAt|date:'medium'}}</p>
+    </div>
+    <div class="message-body">
+      <div class="field is-horizontal" *ngFor="let contact of contractData.contacts">
+        <div class="field-label is-normal">
+          <label class="label">Email {{contact.contact}}</label>
+        </div>
+        <div class="field-body">
+          <div class="field">
+            <p class="control is-expanded has-icons-left">
+              <input class="input" type="text" placeholder="Name" value="{{contact.email}}" readonly>
+              <span class="icon is-small is-left">
+                <i class="fas fa-at"></i>
+              </span>
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="field is-horizontal" *ngFor="let file of contractData.files">
+        <div class="field-label is-normal">
+          <label class="label">{{file.class}} file</label>
+        </div>
+        <div class="field-body">
+          <div class="field">
+            <a class="button is-link" [href]="file.data">{{file.filename}}</a>
+            <p class="is-capitalized">SHA256-Hash: {{file.hash}}</p>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="control">
+          <a class="button is-danger" routerLink="./arbitration">Initiate an arbitration procedure</a>
+        </div>
+      </div>
+    </div>
+  </article>
+</div>

@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/arbitration-for-smart-contracts.iml" filepath="$PROJECT_DIR$/.idea/arbitration-for-smart-contracts.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/smarbico.iml" filepath="$PROJECT_DIR$/.idea/smarbico.iml" />
     </modules>
   </component>
 </project>

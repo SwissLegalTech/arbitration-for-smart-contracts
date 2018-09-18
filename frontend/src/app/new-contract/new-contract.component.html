@@ -13,8 +13,8 @@
         </span>
       </span>
         <span class="file-name">
-        {{agreementFilename}}
-      </span>
+          {{agreementFilename}}
+        </span>
       </label>
     </div>
   </div>
@@ -30,32 +30,70 @@
     </div>
   </div>
 
-  <label class="label">main terms of the agreement</label>
-  <div class="message is-primary" *ngFor="let mainTerm of mainTerms; let idx=index">
-    <div class="message-header">
-      <p>{{mainTerm.label}}</p>
-      <button class="delete" aria-label="delete" (click)="removeMainTerm(idx)"></button>
-    </div>
-    <div class="message-body">
-      {{mainTerm.description}}
-    </div>
-  </div>
-  <div class="field is-grouped">
-    <div class="control ">
-      <input class="input" type="text" placeholder="Label" [formControl]="newMainTermLabel">
-    </div>
-    <div class="control is-expanded">
-      <input class="input" type="text" placeholder="Short Description" [formControl]="newMainTermDescription">
-    </div>
-    <p class="control">
-      <a class="button is-primary" (click)="addMainTerm()">
-        <span class="icon">
-          <i class="fas fa-plus"></i>
+  <label class="label">additional documents/files</label>
+  <div class="file has-name">
+    <label class="file-label">
+      <input #additionalFile1 class="file-input" type="file" name="additionalFile1"
+             (change)="additionalfile1Changed($event)">
+      <span class="file-cta">
+        <span class="file-icon">
+          <i class="fas fa-upload"></i>
         </span>
-        <span>Add</span>
-      </a>
-    </p>
+        <span class="file-label">
+          Choose a file…
+        </span>
+      </span>
+      <span class="file-name">
+        {{additionalFilename1}}
+      </span>
+    </label>
   </div>
+  <div class="file has-name">
+    <label class="file-label">
+      <input #additionalFile2 class="file-input" type="file" name="additionalFile1"
+             (change)="additionalfile2Changed($event)">
+      <span class="file-cta">
+        <span class="file-icon">
+          <i class="fas fa-upload"></i>
+        </span>
+        <span class="file-label">
+          Choose a file…
+        </span>
+      </span>
+      <span class="file-name">
+        {{additionalFilename2}}
+      </span><br>
+    </label>
+  </div>
+  <div class="file has-name">
+    <label class="file-label">
+      <input #additionalFile3 class="file-input" type="file" name="additionalFile3"
+             (change)="additionalfile3Changed($event)">
+      <span class="file-cta">
+        <span class="file-icon">
+          <i class="fas fa-upload"></i>
+        </span>
+        <span class="file-label">
+          Choose a file…
+        </span>
+      </span>
+      <span class="file-name">
+        {{additionalFilename3}}
+      </span>
+    </label>
+  </div>
+  <div class="field">
+    <label class="label">Email Seller</label>
+    <div class="control">
+      <input class="input" type="text" placeholder="Email Seller" [formControl]="emailSeller">
+    </div>
+  </div>
+  <div class="field">
+    <label class="label">Email Buyer</label>
+    <div class="control">
+      <input class="input" type="text" placeholder="Email Buyer" [formControl]="emailBuyer">
+    </div>
+  </div><br>
   <div class="field">
     <p class="control">
       <a class="button is-primary" (click)="saveAgreement()">
